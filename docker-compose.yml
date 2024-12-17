@@ -15,48 +15,100 @@ services:
     build: ./client-gateway
     ports:
       - ${CLIENT_GATEWAY_PORT}:3000
-    volumes: # hot reload in the dev process
-      - ./client-gateway/src:/usr/src/app/src
+    # volumes: # hot reload in the dev process
+    #   - ./client-gateway/src:/usr/src/app/src:rw
     command: npm run start:dev
     environment:
       - PORT=3000
       - NATS_SERVERS=nats://nats-server:4222 # use the nats-server, is the name of the image created before
+    develop:
+      watch:
+        - action: sync
+          path: ./client-gateway/src
+          target: /usr/src/app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./client-gateway/package.json
 
   ### PRODUCTS MICROSERVICE ###
   products-ms:
     build: ./products-ms
-    volumes:
-      - ./products-ms/src:/usr/src/app/src
+    # volumes:
+    #   - ./products-ms/src:/usr/src/app/src:rw
     command: npm run start:dev
     environment:
       - PORT=3001
       - NATS_SERVERS=nats://nats-server:4222
       - DATABASE_URL=file:./dev.db
-
+    develop:
+      watch:
+        - action: sync
+          path: ./products-ms/src
+          target: /usr/src/app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./products-ms/package.json
   ### ORDERS MICROSERVICE ###
 
   orders-ms:
     depends_on:
       - orders-db
     build: ./orders-ms
-    volumes:
-      - ./orders-ms/src:/usr/src/app/src
+    # volumes:
+    #   - ./orders-ms/src:/usr/src/app/src:rw
     command: npm run start:dev
     environment:
       - PORT=3002
       - NATS_SERVERS=nats://nats-server:4222
       - DATABASE_URL=postgresql://postgres:123123@orders-db:5432/ordersdb?schema=public
+    develop:
+      watch:
+        - action: sync
+          path: ./orders-ms/src
+          target: /usr/src/app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./orders-ms/package.json
 
   ### ORDERS DB ###
   orders-db:
     container_name: orders-database
     image: postgres:16.2
     restart: always
-    volumes:
-      - ./orders-ms/postgres:/var/lib/postgresql/data
+    # volumes:
+    #   - ./orders-ms/postgres:/var/lib/postgresql/data
     ports:
       - 5433:5432
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=123123
       - POSTGRES_DB=ordersdb
+
+    ### PAYMENTS ###
+
+  payments-ms:
+    build: ./payments-ms
+    # volumes:
+    #   - ./payments-ms/src:/usr/src/app/src:rw
+    command: npm run start:dev
+    ports:
+      - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
+    environment:
+      - PORT=${PAYMENTS_MS_PORT}
+      - NATS_SERVERS=nats://nats-server:4222
+      - STRIPE_SECRET=${STRIPE_SECRET}
+      - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
+      - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+    develop:
+      watch:
+        - action: sync
+          path: ./payments-ms/src
+          target: /usr/src/app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./payments-ms/package.json
