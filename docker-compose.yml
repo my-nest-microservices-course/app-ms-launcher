@@ -112,3 +112,25 @@ services:
             - node_modules/
         - action: rebuild
           path: ./payments-ms/package.json
+
+  auth-ms:
+    build: ./auth-ms
+    # volumes:
+    #   - ./auth-ms/src:/usr/src/app/src:rw
+    command: npm run start:dev
+    environment:
+      - PORT=3004
+      - NATS_SERVERS=nats://nats-server:4222
+      - AUTH_DATABASE_URL=${AUTH_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+
+      # - DATABASE_URL=file:./dev.db
+    develop:
+      watch:
+        - action: sync
+          path: ./auth-ms/src
+          target: /usr/src/app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./auth-ms/package.json
