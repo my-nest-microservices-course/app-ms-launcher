@@ -1,0 +1,92 @@
+version: "3"
+# docker compose -f docker-compose.prod.yml build
+# docker compose -f docker-compose.prod.yml up
+
+services:
+  ### NATS ###
+  nats-server:
+    image: nats:latest
+
+  ### GATEWAY ###
+  client-gateway:
+    build:
+      context: ./client-gateway
+      dockerfile: Dockerfile.prod
+    image: client-gateway-prod
+    ports:
+      - ${CLIENT_GATEWAY_PORT}:${CLIENT_GATEWAY_PORT}
+    environment:
+      - PORT=${CLIENT_GATEWAY_PORT}
+      - NATS_SERVERS=nats://nats-server:4222
+
+  # ### PRODUCTS MICROSERVICE ###
+  products-ms:
+    build:
+      context: ./products-ms
+      dockerfile: Dockerfile.prod
+    image: products-ms-prod
+    environment:
+      - PORT=3001
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=file:./dev.db
+
+  # ### ORDERS MICROSERVICE ###
+
+  orders-ms:
+    build:
+      context: ./orders-ms
+      dockerfile: Dockerfile.prod
+      # this is how you pass environment variables to the container in Dockerfile.prod
+      args:
+        - ORDERS_DATABASE_URL=${ORDERS_DATABASE_URL}
+    image: orders-ms-prod
+
+    environment:
+      - PORT=3002
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=${ORDERS_DATABASE_URL}
+
+  # ### ORDERS DB ###
+  # orders-db:
+  #   build:
+  #     context: ./orders-ms
+  #     dockerfile: Dockerfile.prod
+  #   container_name: orders-database
+  #   image: postgres:16.2
+  #   restart: always
+  #   # volumes:
+  #   #   - ./orders-ms/postgres:/var/lib/postgresql/data
+  #   ports:
+  #     - 5433:5432
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=123123
+  #     - POSTGRES_DB=ordersdb
+
+  #   ### PAYMENTS ###
+
+  payments-ms:
+    build:
+      context: ./payments-ms
+      dockerfile: Dockerfile.prod
+    image: payments-ms-prod
+    ports:
+      - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
+    environment:
+      - PORT=${PAYMENTS_MS_PORT}
+      - NATS_SERVERS=nats://nats-server:4222
+      - STRIPE_SECRET=${STRIPE_SECRET}
+      - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
+      - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+
+  auth-ms:
+    build:
+      context: ./auth-ms
+      dockerfile: Dockerfile.prod
+    image: auth-ms-prod
+    environment:
+      - PORT=3004
+      - NATS_SERVERS=nats://nats-server:4222
+      - AUTH_DATABASE_URL=${AUTH_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
