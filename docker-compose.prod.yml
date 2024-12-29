@@ -12,7 +12,7 @@ services:
     build:
       context: ./client-gateway
       dockerfile: Dockerfile.prod
-    image: client-gateway-prod
+    image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/client-gateway-prod
     ports:
       - ${CLIENT_GATEWAY_PORT}:${CLIENT_GATEWAY_PORT}
     environment:
@@ -24,7 +24,7 @@ services:
     build:
       context: ./products-ms
       dockerfile: Dockerfile.prod
-    image: products-ms-prod
+    image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/products-ms-prod
     environment:
       - PORT=3001
       - NATS_SERVERS=nats://nats-server:4222
@@ -38,8 +38,9 @@ services:
       dockerfile: Dockerfile.prod
       # this is how you pass environment variables to the container in Dockerfile.prod
       args:
+        # this pass comes from google cloud in cloudbuild.yaml
         - ORDERS_DATABASE_URL=${ORDERS_DATABASE_URL}
-    image: orders-ms-prod
+    image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/orders-ms-prod
 
     environment:
       - PORT=3002
@@ -52,7 +53,7 @@ services:
   #     context: ./orders-ms
   #     dockerfile: Dockerfile.prod
   #   container_name: orders-database
-  #   image: postgres:16.2
+  #   image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/postgres:16.2
   #   restart: always
   #   # volumes:
   #   #   - ./orders-ms/postgres:/var/lib/postgresql/data
@@ -69,7 +70,7 @@ services:
     build:
       context: ./payments-ms
       dockerfile: Dockerfile.prod
-    image: payments-ms-prod
+    image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/payments-ms-prod
     ports:
       - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
     environment:
@@ -84,7 +85,7 @@ services:
     build:
       context: ./auth-ms
       dockerfile: Dockerfile.prod
-    image: auth-ms-prod
+    image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/auth-ms-prod
     environment:
       - PORT=3004
       - NATS_SERVERS=nats://nats-server:4222

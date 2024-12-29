@@ -43,7 +43,7 @@ services:
       - DATABASE_URL=file:./dev.db
     develop:
       watch:
-        - action: sync
+        - action: sync+restart
           path: ./products-ms/src
           target: /usr/src/app/src
           ignore:
@@ -97,6 +97,7 @@ services:
     ports:
       - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
     environment:
+      - NODE_ENV=development
       - PORT=${PAYMENTS_MS_PORT}
       - NATS_SERVERS=nats://nats-server:4222
       - STRIPE_SECRET=${STRIPE_SECRET}
