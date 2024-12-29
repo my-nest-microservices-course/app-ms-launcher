@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: payments-ms
+  name: payments-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments-ms
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: payments-ms
+    spec:
+      containers:
+      - image: southamerica-east1-docker.pkg.dev/microservices-course-445914/image-registry/payments-ms-prod
+        name: payments-ms-prod
+        env:
+          - name: PORT
+            value: "3003"
+          - name: NATS_SERVERS
+            value: "nats://nats"
+          # STRIPE_SUCCESS_URL=http://localhost:3003/payments/success
+          # STRIPE_CANCEL_URL=http://localhost:3003/payments/cancel
+          - name: STRIPE_SUCCESS_URL
+            value: "http://localhost:32699/payments/success"
+          - name: STRIPE_CANCEL_URL
+            value: "http://localhost:32699/payments/cancel"
+          - name: STRIPE_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: payments-ms-secrets
+                key: STRIPE_SECRET
+          - name: STRIPE_ENDPOINT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: payments-ms-secrets
+                key: STRIPE_ENDPOINT_SECRET
+        resources: {}
+status: {}
